@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
-  </head>
-  <body>
-    <a-scene embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
+</head>
+
+<body>
+    <a-scene renderer="antialias: true; highRefreshRate: true; precision: high;">
+        <a-scene embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
         <!-- url链接要改 -->
         <a-nft
             type="nft"
@@ -15,108 +18,111 @@
             smoothCount="10"
             smoothTolerance=".01"
             smoothThreshold="5">            
-            <a-entity generate-surface position="-10 0 -20"></a-entity>
-            <a-camera position="3 5 -2"></a-camera>
+            <a-entity position="-1 1 -5" rotation="80 45 0">
+                <a-entity rate-curve></a-entity>
+            </a-entity>
+            <a-entity position="10 0 10" rotation="0 50 0">
+                <a-camera></a-camera>
+            </a-entity>
             <a-light type="ambient" color="#445"></a-light>
             <a-light type="directional" color="#fff" position="2 4 -4"></a-light>
-            <a-sky color="#ECECEC"></a-sky>
-        </a-nft>
 
-        <a-entity camera="fov: 190"></a-entity>
+            <!-- XYZ轴 -->
+            <a-box position="-2.5 0 -2" depth="0.05" height="0.05" width="10" color="red"></a-box>
+            <a-box position="-5 2.5 -2" depth="0.05" height="10" width="0.05" color="green"></a-box>
+            <a-box position="-5 0 0.5" depth="10" height="0.05" width="0.05" color="blue" rotation="0 0 90"></a-box>
+
+            <!-- 坐标title -->
+            <a-text value="Date" color="red" position="4 0 -2"></a-text>
+            <a-text value="Type" color="green" position="-5 8 -2"></a-text>
+            <a-text value="ratio" color="blue" position="-5 0 6"></a-text>
+
+            <a-entity camera="fov: 190"></a-entity>
+        </a-nft>
     </a-scene>
 
     <script>
-        AFRAME.registerComponent('generate-surface', {
-        schema: {
-            interval: {type: 'number', default: 1000} // 时间间隔以毫秒为单位
-        },
-        init: function() {
-            this.lastTime = 0; // 初始化上次更新时间
+        AFRAME.registerComponent('rate-curve', {
+            schema: {
+                interval: { type: 'number', default: 3000 } // 时间间隔以毫秒为单位
+            },
+            init: function () {
+                var sceneEl = this.el.sceneEl;
+                var scene = sceneEl.object3D;
 
-                var xLength = 300; // X维度长度
-                var yLength = 3; // Y维度长度，即y数组的长度 代表 1y，2y，3y
-                var scale = 10 / (xLength - 1); // 调整顶点间的间隔，保持总长度大约为14个单位长度
+                // Curve
+                var curve = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(-2, 2, 0),
+                    new THREE.Vector3(-1, 0.5, 0),
+                    new THREE.Vector3(0, 1, 0),
+                    new THREE.Vector3(1, 3, 0),
+                    new THREE.Vector3(2, 1, 0)
+                ]);
 
-             // 从提供的数据创建顶点
-            var vertices = [];
+                var pointsCount = 50;
+                var pointsCount1 = pointsCount + 1;
+                var pts = curve.getPoints(pointsCount);
+                var width = 2;
+                let pts2 = curve.getPoints(pointsCount);
+                pts2.forEach(p => p.z += width);
+                pts = pts.concat(pts2);
 
+                var ribbonGeom = new THREE.BufferGeometry().setFromPoints(pts);
+                var indices = [];
+                for (let iy = 0; iy < 1; iy++) {
+                    for (let ix = 0; ix < pointsCount; ix++) {
+                        var a = ix + pointsCount1 * iy;
+                        var b = ix + pointsCount1 * (iy + 1);
+                        var c = (ix + 1) + pointsCount1 * (iy + 1);
+                        var d = (ix + 1) + pointsCount1 * iy;
 
-            // 计算顶点
-            var vertices = [];
-            for (let i = 0; i < xLength; i++) {
-                for (let j = 0; j < yLength; j++) {
-                    var x = i * scale;
-                    let z = 3.65 + Math.random() * (3.85 - 3.65);
-
-                    vertices.push(x, j, parseFloat(z.toFixed(2)));
-                }
-            }
-            // 创建BufferGeometry
-            var geometry = new THREE.BufferGeometry();
-            var verticesFloat32Array = new Float32Array(vertices);
-            geometry.setAttribute('position', new THREE.BufferAttribute(verticesFloat32Array, 3));
-            // 计算面的索引
-            var indices = [];
-                for (let i = 0; i < xLength - 1; i++) {
-                    for (let j = 0; j < yLength - 1; j++) {
-                    var a = i * yLength + j;
-                    var b = i * yLength + (j + 1);
-                    var c = (i + 1) * yLength + j;
-                    var d = (i + 1) * yLength + (j + 1);
-                    
-                    // 两个三角形构成一个矩形面
-                    indices.push(a, b, d); // 第一个三角形
-                    indices.push(a, d, c); // 第二个三角形
+                        indices.push(a, b, d);
+                        indices.push(b, c, d);
                     }
                 }
+                ribbonGeom.setIndex(indices);
+                ribbonGeom.computeVertexNormals();
 
-            // 将索引添加到几何体中
-            geometry.setIndex(indices);
+                var ribbon = new THREE.Mesh(ribbonGeom, new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
+                scene.add(ribbon);
 
-            // 创建材质
-            var material = new THREE.MeshPhongMaterial({
-                color: 0x156289, // 设置一个基础颜色
-                emissive: 0x072534, // 发射光颜色，可以使材质看起来更有深度
-                side: THREE.DoubleSide, // 确保材质从两面都可见
-                flatShading: true, // 使曲面的每个面都有独立的颜色，而不是平滑过渡，可以更清楚地看到每个面
-            });
-
-            // 添加光源到场景
-            var sceneEl = this.el.sceneEl; // 获取场景元素
-            var ambientLight = new THREE.AmbientLight(0x404040); // 软白色环境光
-            var directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); // 半强度的白色定向光
-            directionalLight.position.set(1, 1, 1); // 设置光源方向
-            sceneEl.object3D.add(ambientLight);
-            sceneEl.object3D.add(directionalLight);
-
-            // 创建网格并添加到场景
-            var mesh = new THREE.Mesh(geometry, material);
-            this.el.setObject3D('mesh', mesh);
-        },
-        tick: function(time) {
-            // 检查是否已经过了设定的时间间隔
-            if (time - this.lastTime < this.data.interval) {
-            return; // 如果没有达到指定间隔，什么都不做
-            }
-            this.lastTime = time; // 更新上次执行时间
-
-                var mesh = this.el.getObject3D('mesh');
-                if (!mesh) return;
-
-                // 获取顶点位置属性
-                var positions = mesh.geometry.attributes.position;
-                for (let i = 0; i < positions.count; i++) {
-                    // 计算新的Z值
-                    positions.setZ(i, Math.sin((i / 2 + (time * 0.0005)) * 2) * 0.5);
+                // Line
+                var line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(pointsCount)), new THREE.LineBasicMaterial({ color: "red", depthTest: false }));
+                scene.add(line);
+                this.ribbon = ribbon;
+                this.curve = curve;
+            },
+            tick: function (time, timeDelta) {
+                if (time - this.lastTime < this.data.interval) {
+                    return; // 如果没有达到指定间隔，什么都不做
                 }
+                this.lastTime = time; // 更新上次执行时间
+                // 根据时间更新曲线的顶点数值
+                var curve = this.curve;
+                let newPoints = []
+                for (let i = 1; i < 50; i++) {
+                    newPoints.push(new THREE.Vector3(-3 + 0.2 * i, 1.65 + Math.random() * (3.85 - 3.65), 0))
+                }
+                curve.points = newPoints;
 
-                // 通知Three.js顶点位置已更新
-                positions.needsUpdate = true;
+                // 重新生成曲线的几何体
+                var ribbonGeom = this.ribbon.geometry;
+                var points = curve.getPoints(50);
+                let points2 = curve.getPoints(50);
+                let width = 2;
+                points2.forEach(p => p.z += width);
+                var pts = points.concat(points2);
 
-                // 如果需要的话，重新计算法线以得到正确的光照效果
-                mesh.geometry.computeVertexNormals();
-        }
-        });
+                ribbonGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts.flatMap(p => [p.x, p.y, p.z])), 3));
+                ribbonGeom.attributes.position.needsUpdate = true;
+                console.log(this.ribbon.rotation.x)
+                this.ribbon.rotation.x = 0.6;
+
+                ribbonGeom.computeVertexNormals();
+            }
+
+        })
     </script>
-  </body>
+</body>
+
 </html>
