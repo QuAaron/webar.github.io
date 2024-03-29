@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+  </head>
+  <body>
+    <a-scene embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
+        <!-- url链接要改 -->
+        <a-nft
+            type="nft"
+            url="chinaCenter/chinaCenter" 
+            smooth="true"
+            smoothCount="10"
+            smoothTolerance=".01"
+            smoothThreshold="5">            
+            <a-entity generate-surface position="-10 0 -20"></a-entity>
+            <a-camera position="3 5 -2"></a-camera>
+            <a-light type="ambient" color="#445"></a-light>
+            <a-light type="directional" color="#fff" position="2 4 -4"></a-light>
+            <a-sky color="#ECECEC"></a-sky>
+        </a-nft>
+
+        <a-entity camera="fov: 190"></a-entity>
+    </a-scene>
+
+    <script>
+        AFRAME.registerComponent('generate-surface', {
+        schema: {
+            interval: {type: 'number', default: 1000} // 时间间隔以毫秒为单位
+        },
+        init: function() {
+            this.lastTime = 0; // 初始化上次更新时间
+
+                var xLength = 300; // X维度长度
+                var yLength = 3; // Y维度长度，即y数组的长度 代表 1y，2y，3y
+                var scale = 10 / (xLength - 1); // 调整顶点间的间隔，保持总长度大约为14个单位长度
+
+             // 从提供的数据创建顶点
+            var vertices = [];
+
+
+            // 计算顶点
+            var vertices = [];
+            for (let i = 0; i < xLength; i++) {
+                for (let j = 0; j < yLength; j++) {
+                    var x = i * scale;
+                    let z = 3.65 + Math.random() * (3.85 - 3.65);
+
+                    vertices.push(x, j, parseFloat(z.toFixed(2)));
+                }
+            }
+            // 创建BufferGeometry
+            var geometry = new THREE.BufferGeometry();
+            var verticesFloat32Array = new Float32Array(vertices);
+            geometry.setAttribute('position', new THREE.BufferAttribute(verticesFloat32Array, 3));
+            // 计算面的索引
+            var indices = [];
+                for (let i = 0; i < xLength - 1; i++) {
+                    for (let j = 0; j < yLength - 1; j++) {
+                    var a = i * yLength + j;
+                    var b = i * yLength + (j + 1);
+                    var c = (i + 1) * yLength + j;
+                    var d = (i + 1) * yLength + (j + 1);
+                    
+                    // 两个三角形构成一个矩形面
+                    indices.push(a, b, d); // 第一个三角形
+                    indices.push(a, d, c); // 第二个三角形
+                    }
+                }
+
+            // 将索引添加到几何体中
+            geometry.setIndex(indices);
+
+            // 创建材质
+            var material = new THREE.MeshPhongMaterial({
+                color: 0x156289, // 设置一个基础颜色
+                emissive: 0x072534, // 发射光颜色，可以使材质看起来更有深度
+                side: THREE.DoubleSide, // 确保材质从两面都可见
+                flatShading: true, // 使曲面的每个面都有独立的颜色，而不是平滑过渡，可以更清楚地看到每个面
+            });
+
+            // 添加光源到场景
+            var sceneEl = this.el.sceneEl; // 获取场景元素
+            var ambientLight = new THREE.AmbientLight(0x404040); // 软白色环境光
+            var directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); // 半强度的白色定向光
+            directionalLight.position.set(1, 1, 1); // 设置光源方向
+            sceneEl.object3D.add(ambientLight);
+            sceneEl.object3D.add(directionalLight);
+
+            // 创建网格并添加到场景
+            var mesh = new THREE.Mesh(geometry, material);
+            this.el.setObject3D('mesh', mesh);
+        },
+        tick: function(time) {
+            // 检查是否已经过了设定的时间间隔
+            if (time - this.lastTime < this.data.interval) {
+            return; // 如果没有达到指定间隔，什么都不做
+            }
+            this.lastTime = time; // 更新上次执行时间
+
+                var mesh = this.el.getObject3D('mesh');
+                if (!mesh) return;
+
+                // 获取顶点位置属性
+                var positions = mesh.geometry.attributes.position;
+                for (let i = 0; i < positions.count; i++) {
+                    // 计算新的Z值
+                    positions.setZ(i, Math.sin((i / 2 + (time * 0.0005)) * 2) * 0.5);
+                }
+
+                // 通知Three.js顶点位置已更新
+                positions.needsUpdate = true;
+
+                // 如果需要的话，重新计算法线以得到正确的光照效果
+                mesh.geometry.computeVertexNormals();
+        }
+        });
+    </script>
+  </body>
+</html>
