@@ -85,7 +85,8 @@
                 ribbonGeom.computeVertexNormals();
 
                 var ribbon = new THREE.Mesh(ribbonGeom, new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
-                scene.add(ribbon);
+                // scene.add(ribbon);
+                this.el.setObject3D('mesh', ribbon);
 
                 // Line
                 var line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(pointsCount)), new THREE.LineBasicMaterial({ color: "red", depthTest: false }));
