@@ -8,8 +8,12 @@
 </head>
 
 <body>
-    <a-scene embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
-        <!-- url链接要改 -->
+  <a-scene
+    vr-mode-ui="enabled: false;"
+    renderer="logarithmicDepthBuffer: true;"
+    embedded
+    arjs="trackingMethod: best; sourceType: webcam;debugUIEnabled: false;"
+  >        <!-- url链接要改 -->
         <a-nft
             type="nft"
             url="https://quaaron.github.io/webar.github.io/chinaCenter/chinaCenter"
