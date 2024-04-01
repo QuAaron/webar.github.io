@@ -8,35 +8,38 @@
 </head>
 
 <body>
-  <a-scene
+    <a-scene 
+    cursor="rayOrigin: mouse"
     vr-mode-ui="enabled: false;"
     renderer="logarithmicDepthBuffer: true;"
     embedded
-    arjs="trackingMethod: best; sourceType: webcam;debugUIEnabled: false;"
-  >        <!-- url链接要改 -->
-        <a-nft
+    arjs="trackingMethod: best; sourceType: webcam;debugUIEnabled: false;">      
+        <!-- url链接要改 -->
+         <a-nft
             type="nft"
             url="https://quaaron.github.io/webar.github.io/chinaCenter/chinaCenter"
             smooth="true"
             smoothCount="10"
             smoothTolerance=".01"
-            smoothThreshold="5">            
-            <a-entity rate-curve position="1 0 0"></a-entity>
-            <a-entity position="10 0 10" rotation="0 50 0">
-                <a-camera></a-camera>
+            smoothThreshold="5">
+            <a-entity id="rotatable-model" rate-curve position="-1 0 0"></a-entity>
+            <a-entity position="0 0 0" rotation="0 50 0">
+                <a-camera>               
+                    <a-cursor></a-cursor>
+                </a-camera>
             </a-entity>
             <a-light type="ambient" color="#445"></a-light>
             <a-light type="directional" color="#fff" position="2 4 -4"></a-light>
 
             <!-- XYZ轴 -->
-            <a-box position="-2.5 0 -2" depth="0.05" height="0.05" width="10" color="red"></a-box>
-            <a-box position="-5 2.5 -2" depth="0.05" height="10" width="0.05" color="green"></a-box>
-            <a-box position="-5 0 0.5" depth="10" height="0.05" width="0.05" color="blue" rotation="0 0 90"></a-box>
+            <a-box position="-2.5 0 -2" depth="0.05" height="0.05" width="5" color="red"></a-box>
+            <a-box position="-5 2.5 -2" depth="0.05" height="5" width="0.05" color="green"></a-box>
+            <a-box position="-5 0 0.5" depth="5" height="0.05" width="0.05" color="blue" rotation="0 0 90"></a-box>
 
             <!-- 坐标title -->
-            <a-text value="Date" color="red" position="4 0 -2"></a-text>
-            <a-text value="Type" color="green" position="-5 8 -2"></a-text>
-            <a-text value="ratio" color="blue" position="-5 0 6"></a-text>
+            <a-text value="Date" color="red" position="1 0 -2"></a-text>
+            <a-text value="Type" color="green" position="-5 6 -2"></a-text>
+            <a-text value="ratio" color="blue" position="-5 0 4"></a-text>
 
             <a-entity camera="fov: 190"></a-entity>
         </a-nft>
@@ -87,10 +90,9 @@
                 var ribbon = new THREE.Mesh(ribbonGeom, new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
                 // scene.add(ribbon);
                 this.el.setObject3D('mesh', ribbon);
-
                 // Line
-                var line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(pointsCount)), new THREE.LineBasicMaterial({ color: "red", depthTest: false }));
-                scene.add(line);
+                // var line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(pointsCount)), new THREE.LineBasicMaterial({ color: "red", depthTest: false }));
+                // scene.add(line);
                 this.ribbon = ribbon;
                 this.curve = curve;
             },
@@ -102,8 +104,8 @@
                 // 根据时间更新曲线的顶点数值
                 var curve = this.curve;
                 let newPoints = []
-                for (let i = 1; i < 50; i++) {
-                    newPoints.push(new THREE.Vector3(-3 + 0.2 * i, 1.65 + Math.random() * (3.85 - 3.65), 0))
+                for (let i = 1; i < 25; i++) {
+                    newPoints.push(new THREE.Vector3(-3 + 0.2 * i, 1.65 + Math.random() * (4.85 - 2.65), 0))
                 }
                 curve.points = newPoints;
 
@@ -117,13 +119,20 @@
 
                 ribbonGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts.flatMap(p => [p.x, p.y, p.z])), 3));
                 ribbonGeom.attributes.position.needsUpdate = true;
-                console.log(this.ribbon.rotation.x)
-                this.ribbon.rotation.x = 0.6;
+
+                this.ribbon.rotation.x = 0.3;
 
                 ribbonGeom.computeVertexNormals();
             }
 
         })
+
+        document.querySelector('#rotatable-model').addEventListener('click', function () {
+            // 在点击时旋转模型
+            let rotation = this.getAttribute('rotation');
+            rotation.y += 45; // 每次点击旋转45度
+            this.setAttribute('rotation', rotation);
+        });
     </script>
 </body>
 
